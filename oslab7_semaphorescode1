@@ -1,0 +1,69 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <pthread.h>
+#include <semaphore.h>
+#define NUM_THREADS 4
+
+int count= 0;
+
+sem_t sem_w, sem_r, mutex;
+
+void *writer(void *threadid) {
+    int tid = *(int *)threadid;
+
+    for (int i = 0; i < 1; i++) {
+        sem_wait(&sem_w);
+        sem_wait(&mutex);
+	count++;
+        printf("increamented count after %d writer is %d\n", tid,count);
+        sem_post(&mutex);
+        sem_post(&sem_r);
+    }
+    pthread_exit(NULL);
+}
+void *reader(void *threadid) {
+    int tid = *(int *)threadid;
+
+    for (int i = 0; i < 1; i++) {
+        sem_wait(&sem_r);
+        sem_wait(&mutex);
+
+        printf("Reader %d read the count: %d\n", tid, count);
+
+        sem_post(&mutex);
+        sem_post(&sem_w);
+    }
+    pthread_exit(NULL);
+}
+
+int main() {
+    pthread_t threads[NUM_THREADS];
+    int rc, tids[NUM_THREADS];
+    sem_init(&sem_w, 0, 1);
+    sem_init(&sem_r, 0, 0);
+    sem_init(&mutex, 0, 1);
+    for (int i = 0; i < 2; i++) {
+        tids[i] = i;
+        rc = pthread_create(&threads[i], NULL, writer, (void *)&tids[i]);
+        if (rc) {
+            printf("Error: Unable to create writer thread %d\n", i);
+            exit(-1);
+        }
+    }
+    for (int i = 2; i < NUM_THREADS; i++) {
+        tids[i] = i;
+        rc = pthread_create(&threads[i], NULL, reader, (void *)&tids[i]);
+        if (rc) {
+            printf("Error: Unable to create reader thread %d\n", i);
+            exit(-1);
+        }
+    }
+    for (int i = 0; i < NUM_THREADS; i++) {
+        pthread_join(threads[i], NULL);
+    }
+    sem_destroy(&sem_w);
+    sem_destroy(&sem_r);
+    sem_destroy(&mutex);
+
+    pthread_exit(NULL);
+}
