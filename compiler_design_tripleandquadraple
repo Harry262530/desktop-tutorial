@@ -1,0 +1,55 @@
+#include <iostream>
+#include <string>
+#include <vector>
+
+using namespace std;
+
+class Instruction {
+public:
+    string op;
+    string arg1;
+    string arg2;
+    string result;
+
+    Instruction(string op, string arg1, string arg2, string result) {
+        this->op = op;
+        this->arg1 = arg1;
+        this->arg2 = arg2;
+        this->result = result;
+    }
+};
+
+class ThreeAddressCode {
+public:
+    vector<Instruction> instructions;
+
+    ThreeAddressCode() {}
+
+    void add(string op, string arg1, string arg2, string result) {
+        Instruction inst(op, arg1, arg2, result);
+        instructions.push_back(inst);
+    }
+
+    void printInstructions() {
+        for (int i = 0; i < instructions.size(); i++) {
+            Instruction inst = instructions[i];
+            cout << inst.result << "=";
+            if (inst.op != "" && inst.arg2!="") {
+                cout << inst.arg1<< inst.op<< inst.arg2;
+            } else {
+                cout << inst.arg1;
+            }
+            cout << endl;
+        }
+    }
+};
+
+int main() {
+    ThreeAddressCode a;
+    a.add("+", "a", "b", "t1");
+    a.add("*", "t1", "c", "t2");
+    a.add("+", "t2", "d", "t3");
+    a.add("=", "t3", "", "e");
+    a.printInstructions();
+    return 0;
+}
