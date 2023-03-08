@@ -1,0 +1,30 @@
+#include <stdio.h>
+#include <unistd.h>
+#include <time.h>
+#include <stdlib.h>
+
+using namespace std;
+void think(int id){
+    printf("the professore %d is thinking",id);
+    sleep(1);
+}
+void eat(int id){
+    printf("the professor %d is eating",id);
+    sleep(1);
+}
+void professor(int id){
+        think(id);
+        eat(id);
+    
+}
+int main(){
+    //srand(time(NULL));
+    int m=5;
+    for (int i=0;i<m;i++){
+        if (fork()==0){
+            professor(i);
+        }
+    }
+    
+    return 0;
+}
