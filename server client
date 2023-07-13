@@ -1,0 +1,104 @@
+
+#include <stdio.h> 
+#include <stdlib.h> 
+#include <string.h> 
+#include <arpa/inet.h> 
+#include <sys/socket.h> 
+#define PORT 12345 
+#define BUFFER_SIZE 1024 
+int main() { 
+int client_socket; 
+struct sockaddr_in server_address; 
+char buffer[BUFFER_SIZE]; 
+// Create a UDP socket 
+client_socket = socket(AF_INET, SOCK_DGRAM, 0); 
+if (client_socket < 0) { 
+perror("Error creating socket"); 
+exit(EXIT_FAILURE); 
+} 
+// Set the server address and port number 
+memset(&server_address, 0, sizeof(server_address)); 
+server_address.sin_family = AF_INET; 
+server_address.sin_addr.s_addr = inet_addr("127.0.0.1"); 
+server_address.sin_port = htons(PORT); 
+// Get user input for the message to be sent 
+printf("Enter the message to be sent: "); 
+fgets(buffer, BUFFER_SIZE, stdin); 
+buffer[strcspn(buffer, "\n")] = '\0'; 
+// Send the message to the server 
+if (sendto(client_socket, buffer, strlen(buffer), 0, (struct sockaddr *)&server_address, sizeof(server_address)) < 0) { 
+perror("Error sending data"); 
+exit(EXIT_FAILURE); 
+} 
+// Receive the response from the server 
+memset(buffer, 0, BUFFER_SIZE); 
+if (recvfrom(client_socket, buffer, BUFFER_SIZE, 0, NULL, NULL) < 0) { 
+perror("Error receiving data"); 
+exit(EXIT_FAILURE); 
+} 
+// Print the reversed message received from the server 
+printf("Reversed message received: %s\n", buffer); 
+// Close the socket 
+close(client_socket); 
+return 0; 
+} 
+
+
+
+SERVER:
+
+#include <stdio.h> 
+#include <stdlib.h> 
+#include <string.h> 
+#include <arpa/inet.h> 
+#include <sys/socket.h> 
+#define PORT 12345 
+#define BUFFER_SIZE 1024 
+int main() { 
+int server_socket; 
+struct sockaddr_in server_address, client_address; 
+socklen_t client_address_len = sizeof(client_address); 
+char buffer[BUFFER_SIZE]; 
+// Create a UDP socket 
+server_socket = socket(AF_INET, SOCK_DGRAM, 0); 
+if (server_socket < 0) { 
+perror("Error creating socket"); 
+exit(EXIT_FAILURE); 
+} 
+// Bind the socket to a specific port 
+memset(&server_address, 0, sizeof(server_address)); 
+server_address.sin_family = AF_INET; 
+server_address.sin_addr.s_addr = INADDR_ANY; 
+server_address.sin_port = htons(PORT); 
+if (bind(server_socket, (struct sockaddr *)&server_address, sizeof(server_address)) < 0) { 
+perror("Error binding socket"); 
+exit(EXIT_FAILURE); 
+} 
+printf("Server is listening on 0.0.0.0:%d\n", PORT); 
+while (1) { 
+// Receive message from client 
+memset(buffer, 0, BUFFER_SIZE); 
+if (recvfrom(server_socket, buffer, BUFFER_SIZE, 0, (struct sockaddr 
+*)&client_address, &client_address_len) < 0) { 
+perror("Error receiving data"); 
+continue; 
+} 
+// Reverse the received message 
+int len = strlen(buffer); 
+for (int i = 0; i < len / 2; i++) { 
+char tmp = buffer[i]; 
+buffer[i] = buffer[len - i - 1]; 
+buffer[len - i - 1] = tmp; 
+} 
+// Print the received and reversed message 
+printf("Received from %s:%d: %s\n", inet_ntoa(client_address.sin_addr), ntohs(client_address.sin_port), buffer); 
+printf("Reversed message: %s\n", buffer); 
+// Send the reversed message back to the client 
+if (sendto(server_socket, buffer, strlen(buffer), 0, (struct sockaddr *)&client_address, client_address_len) < 0) { 
+perror("Error sending data"); 
+continue; 
+} 
+} 
+return 0;
+}
+ 
